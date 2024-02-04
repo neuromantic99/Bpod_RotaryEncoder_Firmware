@@ -106,6 +106,7 @@ boolean isLogging = false;           // If currently logging position and time t
 boolean moduleStreaming = false;     // If streaming position to a separate module via the output stream jack (preconfigured output for DDS module)
 boolean newThresholdsLoaded = false; // If new 'advanced' thresholds were loaded to the device with 't' command (different from legacy 'T')
 int16_t EncoderPos = 0;              // Current position of the rotary encoder
+int16_t EncoderDist = 0;             // Current position of the rotary encoder
 int16_t LastEncoderPos = 0;          // Last known position of rotary encoder
 byte currentDir = 0;                 // Current direction (0 = clockwise, 1 = counterclockwise)
 byte outputSyncLogic[2] = {0};
@@ -302,7 +303,8 @@ void loop()
         usbStreaming = myUSB.readByte();
         if (usbStreaming)
         {
-          EncoderPos = 0;  // Reset position
+          EncoderPos = 0; // Reset position
+          EncoderDist = 0;
           nWraps = 0;      // Reset wrap counter
           currentTime = 0; // Reset clock
         }
@@ -449,6 +451,7 @@ void loop()
       break;
     case 'Z': // Zero position
       EncoderPos = 0;
+      EncoderDist = 0;
 #if HARDWARE_VERSION == 2
       hwEnc.write(0);
 #endif
@@ -531,6 +534,12 @@ void loop()
       }
       break;
     case 'Q': // Return current encoder position
+      if (opSource == 0)
+      {
+        myUSB.writeInt16(EncoderPos);
+      }
+      break;
+    case 'D': // Return current encoder Dist
       if (opSource == 0)
       {
         myUSB.writeInt16(EncoderPos);
@@ -677,6 +686,7 @@ void updatePosition()
       if (currentDir == 0)
       {
         EncoderPos++;
+        EncoderDist++;
         processPosition();
       }
       currentDir = 0;
@@ -693,6 +703,7 @@ void updatePosition()
       if (currentDir == 1)
       {
         EncoderPos--;
+        EncoderDist--;
         processPosition();
       }
       currentDir = 1;
@@ -861,6 +872,7 @@ void resetDataStreams()
   isLogging = false;
   dataPos = 0;
   EncoderPos = 0;
+  EncoderDist = 0;
   nWraps = 0;
   iPositionBuffer[0] = 0;
   iPositionBuffer[1] = 0;
